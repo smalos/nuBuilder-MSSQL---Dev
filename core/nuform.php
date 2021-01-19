@@ -265,6 +265,7 @@ function nuGetFormObject($F, $R, $OBJS, $tabs = null){
 			if($r->sob_all_type == 'select'){
 
 				$o->multiple		= $r->sob_select_multiple;
+				$o->select2			= $r->sob_select_2;
 				$o->options			= nuSelectOptions(nuReplaceHashVariables($r->sob_select_sql));
 				
 			}
@@ -689,19 +690,32 @@ function nuSetFormValue($f, $v){
 function nuSelectOptions($sql) {
 
 	$a 				= array();
-	
-	if (substr(strtoupper(trim($sql)), 0, 6) == 'SELECT') {						//-- sql statement
-	
-		$t			= nuRunQuery($sql);
+
+	if (substr(strtoupper(trim($sql)), 0, 11) == '%LANGUAGES%') {					//-- language Files
+
+		foreach(glob("languages/*.sql") as $file)  {  
+		   
+			$f	= basename($file, '.sql');
+			
+			$r		= array();
+			$r[0]	= $f;
+			$r[1]	= $f;	
+			$a[]	= $r;			
+			
+		}
+
+	} elseif (substr(strtoupper(trim($sql)), 0, 6) == 'SELECT') {						//-- sql statement
+
+			$t		= nuRunQuery($sql);
+
+			if (nuErrorFound()) {
+				return;
+			}
+
+			while ($r = db_fetch_row($t)) {
+				$a[]	= $r;
+			}
 		
-		if (nuErrorFound()) {
-			return;
-		}
-
-		while ($r = db_fetch_row($t)) {
-			$a[]	= $r;
-		}
-
 	} else {																	//-- comma delimited string
 
 		$t 			= explode('|', nuRemoveNonCharacters($sql));
@@ -717,9 +731,9 @@ function nuSelectOptions($sql) {
 		}
 
 	}
-	
+
 	return $a;
-	
+
 }
 
 function nuRemoveNonCharacters($s){
