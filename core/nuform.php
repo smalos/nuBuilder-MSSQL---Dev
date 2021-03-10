@@ -1064,12 +1064,12 @@ function nuBrowseWhereClause($searchFields, $searchString, $returnArray = false)
 
 		}
 
-		$SEARCHES[$i]		= ' "%' . substr($SEARCHES[$i], 1, -1) . '%" ';
+		$SEARCHES[$i]		= " '%" . substr($SEARCHES[$i], 1, -1) . "%' ";
 
 	}
 
 	$wordSearches			= explode(' ', $searchString);
-	$quo					= '"';
+	$quo					= "'";
 
 	for ($i = 0; $i < count($wordSearches); $i++) {
 
@@ -1100,9 +1100,17 @@ function nuBrowseWhereClause($searchFields, $searchString, $returnArray = false)
 		for ($SF = 0; $SF < count($searchFields); $SF++) {												//-- loop through searchable fields
 
 			if ($task[$i] == 'include') {																	//-- changed by KEE
-				$include[] = 'CONVERT(' . $searchFields[$SF] . ' USING utf8) LIKE ' . $SEARCHES[$i];
+				if (nuMSSQL()) {
+					$include[] = $searchFields[$SF] . '  LIKE ' . $SEARCHES[$i];
+				} else {
+					$include[] = 'CONVERT(' . $searchFields[$SF] . ' USING utf8) LIKE ' . $SEARCHES[$i];
+				}
 			} else {
-				$exclude[] = 'CONVERT(' . $searchFields[$SF] . ' USING utf8) NOT LIKE ' . $SEARCHES[$i];
+				if (nuMSSQL()) {
+					$exclude[] = $searchFields[$SF] . '  NOT LIKE ' . $SEARCHES[$i];
+				} else {
+					$exclude[] = 'CONVERT(' . $searchFields[$SF] . ' USING utf8) NOT LIKE ' . $SEARCHES[$i];
+				}
 			}
 			
 		}
