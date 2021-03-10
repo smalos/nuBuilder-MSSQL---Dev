@@ -5,11 +5,12 @@ require_once('core/nuchoosesetup.php');
 require_once('core/nuindexlibs.php');
 
 require_once('core/nustandalonesetuplibs.php'); 
-// nuImportNewDB();
+
+if (! nuMSSQL()) nuImportNewDB();
 
 require_once('core/nusystemupdatelibs.php');
 
-// nuMigrateSQL();
+if (! nuMSSQL()) nuMigrateSQL();
 
 if ( !isset($_SESSION['nubuilder_session_data']['NB_PATH']) || dirname($_SESSION['nubuilder_session_data']['NB_PATH']) != $nb_path ) {	
 	nuLoadNewSession();
