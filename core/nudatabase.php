@@ -15,7 +15,7 @@ $DBCharset				= $_SESSION['nubuilder_session_data']['DB_CHARSET'];
 
 try {
 	// MySQL + MSSQL DSN
-	$dsn = $DBDriver == 'mysql' ? "mysql:host=$DBHost;dbname=$DBName;charset=$DBCharset" : "sqlsrv:server=$DBHost,$DBPort;Database=$DBName;ConnectionPooling=0";
+	$dsn = $DBDriver != 'sqlsrv' ? "mysql:host=$DBHost;dbname=$DBName;charset=$DBCharset" : "sqlsrv:server=$DBHost,$DBPort;Database=$DBName;ConnectionPooling=0";
 	$nuDB = new PDO($dsn, $DBUser, $DBPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES $DBCharset"));
 	$nuDB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
@@ -335,14 +335,14 @@ function nuID(){
 function nuIdentCol($s) {
 
 	global $DBDriver;
-	return $DBDriver == 'mysql' ? '`'.$s.'`' : '['.$s.']';
+	return $DBDriver != 'sqlsrv' ? '`'.$s.'`' : '['.$s.']';
 
 }
 
 function nuMSSQL() {
 
 	global $DBDriver;
-	return $DBDriver == 'sqlsrv';
+	return $DBDriver != 'sqlsrv';
 
 }
 
