@@ -283,7 +283,7 @@ function nuUpdateDatabase(){
 							{
 								$add = addslashes($v);	
 								$V[]	= "'$add'";
-								$F[]	= nuIdentCol($fld) . " = '" . nuIdentCol($add) . "'";
+								$F[]	= nuIdentCol($fld) ." = '$add'";
 							}
 
 							$I[]	= nuIdentCol($fld);
