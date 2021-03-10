@@ -342,7 +342,7 @@ function nuIdentCol($s) {
 function nuMSSQL() {
 
 	global $DBDriver;
-	return $DBDriver != 'sqlsrv';
+	return $DBDriver == 'sqlsrv';
 
 }
 
