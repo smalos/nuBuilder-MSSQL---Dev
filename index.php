@@ -1,14 +1,19 @@
 <?php
+$nb_path = __DIR__;
 
 require_once('core/nuchoosesetup.php');
 require_once('core/nuindexlibs.php');
 
 require_once('core/nustandalonesetuplibs.php'); 
-nuStandaloneImportNewDB();
+// nuImportNewDB();
 
 require_once('core/nusystemupdatelibs.php');
 
-nuMigrateSQL();
+// nuMigrateSQL();
+
+if ( !isset($_SESSION['nubuilder_session_data']['NB_PATH']) || dirname($_SESSION['nubuilder_session_data']['NB_PATH']) != $nb_path ) {	
+	nuLoadNewSession();
+}
 
 ?>
 <!DOCTYPE html>
@@ -86,9 +91,9 @@ nuJSIndexInclude('core/nuadmin.js');
 nuJSIndexInclude('core/nureportjson.js');
 nuJSIndexInclude('core/nuajax.js');		//-- calls to server
 nuJSChartsInclude();
-nuJSIndexInclude('core/libs/quill/quill.js'); 
+nuJSIndexInclude('core/libs/quill/quill.min.js'); 
 nuJSIndexInclude('core/libs/quill/modules/quill-divider.js'); 
-nuJSIndexInclude('core/libs/select2/select2.full.min.js'); 
+nuJSIndexInclude('core/libs/select2/select2.min.js'); 
 
 nuCSSIndexInclude('core/css/nubuilder4.css');
 nuCSSIndexInclude('core/libs/quill/themes/quill.snow.css');
@@ -237,7 +242,7 @@ window.nuHASH				= [];
 	}else{
 		
 		if($opener == ''){
-				$h2 = nuGetJS_standalone_login($nuBrowseFunction, $target, $welcome);
+				$h2 = nuGetJS_login($nuBrowseFunction, $target, $welcome);
 			}else{
 				$h2 = nuGetJS_action_screen($nuBrowseFunction, $target, $welcome, $opener, $search, $like);
 		}

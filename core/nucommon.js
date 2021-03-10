@@ -1,7 +1,8 @@
 window.nuDialog 				= new nuCreateDialog('');
 window.nuFORM					= new nuFormObject();
-window.nuRESPONSIVE 			= new nuResponseForm();
-window.nuHideMessage 			= true;
+window.nuRESPONSIVE				= new nuResponseForm();
+window.nuOnLoad					= null;
+window.nuHideMessage			= true;
 window.nuDragID					= 1000;
 window.nuLastForm				= '';
 window.nuNEW					= '';
@@ -23,7 +24,7 @@ window.nuFIELD					= [];
 window.nuHASH					= [];
 window.nuBEFORE					= [];
 window.nuAFTER					= [];
-window.nuBROWSERESIZE 			= {
+window.nuBROWSERESIZE			= {
 									x_position				: 0, 
 									mouse_down				: false, 
 									moving_element			: '', 
@@ -43,13 +44,13 @@ function nuOpener(t, f, r, filter, parameters){
 	this.record_id			= r;
 	this.type				= t;
 	
-	if(arguments.length 	= 3){
+	if(arguments.length		= 3){
 		this.filter			= filter;
 	}else{
 		this.filter			= '';
 	}
 	
-	if(arguments.length 	= 4){
+	if(arguments.length		= 4){
 		this.parameters		= parameters;
 	}else{
 		this.parameters		= '';
@@ -90,6 +91,8 @@ function nuGetBreadcrumb(bc){
 		if (nuOnBeforeGetBreadcrumb(bc) == false) return;
 	}
 	
+	nuCursor('progress');
+	
 	var a			= arguments.length;
 	var e			= nuFORM.edited;
 	
@@ -99,11 +102,12 @@ function nuGetBreadcrumb(bc){
 		var b		= bc;
 	}
 	
-	window.nuTimesSaved 	= -1;
+	window.nuTimesSaved		= -1;
 	
 	if(e && nuFORM.getCurrent().form_type != 'launch'){
 		
 		if(!confirm(nuTranslate('Leave this form without saving?'))){
+			nuCursor('default');
 			return;
 		}
 		
@@ -122,30 +126,31 @@ function nuGetBreadcrumb(bc){
 	
 }
 
-function nuOpenPreviousBreadcrumb() {
+function nuOpenPreviousBreadcrumb(b) {
 
 	// If a popup is open, close it
 	if (parent.$('#nuModal').length > 0) {
 		nuClosePopup();
 		return;
 	}
+
+	if (b === undefined) {
+		var b = 2; 
+	} else {
+		b = b + 1;
+	}
  
 	var l = window.nuFORM.breadcrumbs.length;
 	if (l > 1) {
-		nuGetBreadcrumb(l - 2);
+		nuGetBreadcrumb(l - b);
 	}
 }
-
 
 function nuDisplayError(e){
 
 	if(e.errors === undefined || e.errors.length == 0){			//-- no error messages
 		return false;
 	}
-
-	var im	= ['<img src="core/graphics/nuerror.png" width="30px" height="30px" style="position:absolute;left:10px;top:10px"><br>'];
-
-	im.concat(e.errors);
 
 	nuMessage(e.errors);
 
@@ -180,6 +185,7 @@ String.prototype.replaceAll = function(str1, str2, ignore){
 String.prototype.ltrim = function() {
 	return this.replace(/^\s+/,"");
 }
+
 String.prototype.rtrim = function() {
 	return this.replace(/\s+$/,"");
 }
@@ -210,14 +216,14 @@ $.fn.enterKey = function (fnc) {
 }
 
 jQuery.fn.extend({
-	nuEnable: function() {
+	nuEnable: function(enable) {
 		return this.each(function() {
-		  nuEnable(this.id);
+			nuEnable(this.id, enable);
 		});
 	},
 	nuDisable: function() {
 		return this.each(function() {
-		  nuDisable(this.id);
+			nuDisable(this.id);
 		});
 	},
 	nuShow: function(visible) {
@@ -241,8 +247,8 @@ function loginInputKeyup(event){
 function nuLogin(nuconfigNuWelcomeBodyInnerHTML){
 	
 	var HTML			= String(nuconfigNuWelcomeBodyInnerHTML).trim();
-	window.nuSESSION 	= '';
-	window.nuFORM 		= new nuFormObject();
+	window.nuSESSION	= '';
+	window.nuFORM		= new nuFormObject();
 	
 	$('body').html('');
 
@@ -261,7 +267,7 @@ function nuLogin(nuconfigNuWelcomeBodyInnerHTML){
 							<td><div style='width:90px; margin-bottom: 5px;'>Username</div><input class='nuLoginInput' id='nuusername' autocomplete='off' /><br><br></td>
 						</tr>
 						<tr>
-							<td><div style='width:90px; margin-bottom: 5px;'>Password</div><input class='nuLoginInput' id='nupassword' type='password' autocomplete='off'  onkeypress='nuSubmit(event)'/><br></td>
+							<td><div style='width:90px; margin-bottom: 5px;'>Password</div><input class='nuLoginInput' id='nupassword' type='password' autocomplete='off' onkeypress='nuSubmit(event)'/><br></td>
 						</tr>
 						<tr>
 							<td style='text-align:center' colspan='2'><br><br>
@@ -278,7 +284,7 @@ function nuLogin(nuconfigNuWelcomeBodyInnerHTML){
 	
 	var H	= HTML == '' ? h : HTML
 	
-	var e 	= document.createElement('div');
+	var e	= document.createElement('div');
 	
 	e.setAttribute('id', 'loginbg');
 	
@@ -321,7 +327,7 @@ function nuLogin(nuconfigNuWelcomeBodyInnerHTML){
 
 
 function nuSubmit(e){
-	
+
 	if(e.keyCode == 13){
 		$('#submit').click();
 	}
@@ -330,22 +336,23 @@ function nuSubmit(e){
 
 
 function nuBuildLookup(t, s, like){
-	
+
 	if($(t).prop('disabled')){return;}
 
+	nuCursor('progress');
 
 	var f				= $('#' + t.id).attr('data-nu-form-id');
 	var tar				= $('#' + t.id).attr('data-nu-target');
 	var p				= $('#' + t.id).attr('data-nu-prefix');
 	window.nuSubformRow	= Number(p.substr(p.length - 3));
-	
+
 	if(arguments.length < 3){
-		like 			= '';
+		like			= '';
 	}
-	
+
 	window.nuOPENER.push(new nuOpener('F', f, ''));
-	
-	var open 			= window.nuOPENER[window.nuOPENER.length - 1];
+
+	var open			= window.nuOPENER[window.nuOPENER.length - 1];
 	
 	if(parent.window == window){
 		window.nuDialog.createDialog(50, 25, 50, 50, '');
@@ -361,13 +368,16 @@ function nuBuildLookup(t, s, like){
 
 function nuPopup(f, r, filter){
 
-	if(nuSERVERRESPONSE.global_access == '0' && f == 'nuobject'){return;}
-
+	nuCursor('progress');
+	
+	if(nuSERVERRESPONSE.global_access == '0' && f == 'nuobject'){return;}	
+	if(nuSERVERRESPONSE.objects.length == 0 && r == '-2'){return;}
+	
 	$('#nuCalendar').remove();
 	
 	window.nuOPENER.push(new nuOpener('F', f, r, filter));
 
-	var id 	= window.nuOPENER[window.nuOPENER.length - 1].id;
+	var id = window.nuOPENER[window.nuOPENER.length - 1].id;
 	
 	if(parent.window==window){
 		window.nuDialog.createDialog(50, 25, 50, 50, '');
@@ -449,12 +459,12 @@ function nuCreateDialog(t){
 
 		if(window.nuCurrentID == 'nuModal'){return;}
 		
-		var s 	= document.getElementById('nuDragDialog');
+		var s	= document.getElementById('nuDragDialog');
 		if (s === null) return;
 		
-		var o 	= s.style;
-		var l 	= parseInt(o.left)	+ this.moveX;
-		var t 	= parseInt(o.top)	+ this.moveY;
+		var o	= s.style;
+		var l	= parseInt(o.left)	+ this.moveX;
+		var t	= parseInt(o.top)	+ this.moveY;
 		
 		if(e.target.classList == '' && e.target.id != 'nuSelectBox'){
 			
@@ -492,14 +502,14 @@ function nuCreateDialog(t){
 			'position'			: 'absolute',
 			'visibility'		: 'hidden'
 		})
-		.html('<div id="dialogTitle" class="nuDialogTitle"><div id="dialogTitleWords" style="padding-top: 9px;height:30px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+translation+'</div><img id="dialogClose" src="'+subDir+'graphics/close.png" style="position:absolute; top:2px; left:0px"></div>')
+		.html('<div id="dialogTitle" class="nuDialogTitle"><div id="dialogTitleWords">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+translation+'</div><img id="dialogClose" src="'+subDir+'graphics/close.png" style="position:absolute; top:2px; left:0px"></div>')
 
 		$('body')
 		.on('mousemove.popup',	function(event){nuDialog.move(event);})
 		.on('click.popup',		function(event){nuDialog.click(event);})
 		.on('mousedown.popup',	function(event){nuDialog.down(event);})
-		.on('mouseup.popup', 	function(event){window.nuCurrentID='';$('#nuPopupModal').remove();})
-		.on('dblclick.popup', 	function(event){nuResizeWindow(event);})
+		.on('mouseup.popup',	function(event){window.nuCurrentID='';$('#nuPopupModal').remove();})
+		.on('dblclick.popup',	function(event){nuResizeWindow(event);})
 
 		this.startX = l;
 		this.startY = t;
@@ -842,8 +852,23 @@ function nuGetLookupFields(id){
 	
 }
 
-function nuEnable(i) {            //-- Enable Edit Form Object
+function nuObjectComponents(i) {
 
+	var o	= [i, 'label_' + i];	
+	if ($('#'+ i).attr('data-nu-type') == 'lookup') o.push(i + 'code', i + 'button', i + 'description')
+	if ($('#'+ i).hasClass('select2-hidden-accessible')) o.push(i + 'select2');
+
+	return o;
+
+}
+
+function nuEnable(i, enable) {					//-- Enable Edit Form Object
+
+	if(enable === false){
+		nuDisable(i);
+		return;
+	}
+	
 	a = [];
 	if (!$.isArray(i)) {
 		a.push(i);
@@ -854,10 +879,12 @@ function nuEnable(i) {            //-- Enable Edit Form Object
 	$.each(a, function(index, value) {
 
 		i = a[index];
-		
-		var o = [i, i + 'code', i + 'button', i + 'description'];
+
+		var o =	nuObjectComponents(i);
 	
 		for (var c = 0; c < o.length; c++) {
+
+			if (c === 1) { continue; }		// skip label
 
 			$('#' + o[c])
 				.removeClass('nuReadonly')
@@ -879,9 +906,11 @@ function nuEnable(i) {            //-- Enable Edit Form Object
 
 function nuReadonly(i){					//-- set Edit Form Object to readonly
 
-	var o	= [i, i + 'code', i + 'button', i + 'description'];
+	var o =	nuObjectComponents(i);
 
 	for(var c = 0 ; c < o.length ; c++){
+
+		if (c === 1) { continue; }		// skip label
 
 		$('#' + o[c])
 		.addClass('nuReadonly')
@@ -905,9 +934,11 @@ function nuDisable(i){					//-- Disable Edit Form Object
 
 		i = a[index];
 
-		var o = [i, i + 'code', i + 'button', i + 'description'];
+		var o = nuObjectComponents(i);
 
 		for (var c = 0; c < o.length; c++) {
+
+			if (c === 1) { continue; }		// skip label
 
 			$('#' + o[c])
 				.addClass('nuReadonly')
@@ -926,14 +957,14 @@ function nuDisable(i){					//-- Disable Edit Form Object
 
 }
 
-function nuShow(i, visible){ //-- Show Edit Form Object
+function nuShow(i, visible){
 
 	if(visible === false){
 		nuHide(i);
 		return;
 	}
 
-	var o	= [i, i + 'code', i + 'button', i + 'description', 'label_' + i];
+	var o =	nuObjectComponents(i);
 
 	for(var c = 0 ; c < o.length ; c++){
 
@@ -958,9 +989,9 @@ function nuShow(i, visible){ //-- Show Edit Form Object
 
 }
 
-function nuHide(i){				//-- Hide Edit Form Object
+function nuHide(i){
 
-	var o	= [i, i + 'code', i + 'button', i + 'description', 'label_' + i];
+	var o = nuObjectComponents(i);
 
 	for(var c = 0 ; c < o.length ; c++){
 
@@ -983,28 +1014,6 @@ function nuHide(i){				//-- Hide Edit Form Object
 
 }
 
-/*
-function nuAddThousandSpaces(s, c){
-
-	var a	= String(s).split('');
-	var r	= [];
-
-	r		= a.reverse();
-		
-	if(r.length > 3){r.splice(3, 0, c);}
-	if(r.length > 7){r.splice(7, 0, c);}
-	if(r.length > 11){r.splice(11, 0, c);}
-	if(r.length > 15){r.splice(15, 0, c);}
-	if(r.length > 19){r.splice(19, 0, c);}
-	if(r.length > 23){return 'toobig';}
-
-	r		= r.reverse();
-	
-	return r.join('');
-	
-}
-*/
-
 function nuAddThousandSpaces(s, c){
 	return s.replace(/\B(?=(\d{3})+(?!\d))/g, c)
 }
@@ -1013,15 +1022,15 @@ function nuDuplicates(arr){
 
 	var s	= arr.slice().sort();
 	var d	= [];
-	
+
 	for (var i = 0; i < arr.length - 1; i++) {
 		
 		if (s[i + 1] == s[i]) {
 			d.push(s[i]);
 		}
-		
+
 	}
-	
+
 	return d;
 
 }
@@ -1116,7 +1125,7 @@ function nuWhen(w){
 	var numax	= (Date.now()/1000) - Number(w);
 	var numin	= numax;
 	var nusec	= String(Math.ceil(numin));
-	var nuhtm	= nusec 			+ (nusec==1?' second ago':' seconds ago');
+	var nuhtm	= nusec + (nusec==1?' second ago':' seconds ago');
 
 	return nuhtm;
 
@@ -1271,21 +1280,163 @@ function nuChart(d, t, a, h, x, y, st, is){
 
 		if(a === undefined){return;}
 
-		var data 	= google.visualization.arrayToDataTable(a);
+		var data		= google.visualization.arrayToDataTable(a);
 
 		var options = {
-			title 		: h,
+			title		: h,
 			vAxis		: {title: y},
 			hAxis		: {title: x},
 			seriesType	: st,
-			isStacked 	: is,
+			isStacked	: is,
 		};
 
-		var chart 	= new google.visualization[t](document.getElementById(d));
+		var chart		= new google.visualization[t](document.getElementById(d));
 
 		chart.draw(data, options);
 
 	}
+
+}
+
+function nuGetFontName(font) {
+	return font.toLowerCase().replace(/\s/g, "-");		// Replace whitespaces
+}
+
+function nuQuillFonts(fonts) {
+
+	var fontNames = fonts.map(font => nuGetFontName(font));
+	// add fonts to style
+	var fontStyles = "";
+	fonts.forEach(function(font) {
+		var fontName = nuGetFontName(font);
+		fontStyles += ".ql-snow .ql-picker.ql-font .ql-picker-label[data-value=" + fontName + "]::before, .ql-snow .ql-picker.ql-font .ql-picker-item[data-value=" + fontName + "]::before {" +
+			"content: '" + font + "';" +
+			"font-family: '" + font + "', sans-serif;" +
+			"}" +
+			".ql-font-" + fontName + "{" +
+			" font-family: '" + font + "', sans-serif;" +
+			"}";
+	});
+
+	var node = document.createElement('style');
+	node.innerHTML = fontStyles;
+	document.body.appendChild(node);
+	
+	return fontNames;
+	
+}
+
+function nuQuillToolbarOptions(fontNames) {
+	
+	var toolbarOptions = [
+
+			['bold', 'italic', 'underline', 'strike'], // toggled buttons
+			['blockquote', 'code-block'],
+			
+			[{ 'header': 1 }, { 'header': 2 }], // custom button values
+			[{ 'list': 'ordered' }, { 'list': 'bullet' }],
+			[{ 'script': 'sub' }, { 'script': 'super' }], // superscript/subscript
+			[{ 'indent': '-1' }, { 'indent': '+1' }], // outdent/indent
+			[{ 'direction': 'rtl' }], // text direction
+
+			[{ 'size': ['small', false, 'large', 'huge'] }], // custom dropdown
+			[{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+
+			[{ 'color': [] }, { 'background': [] }], // dropdown with defaults from theme
+			[{ 'font': fontNames }],
+			[{ 'align': [] }],
+
+			['divider'],
+			['link'],
+	
+			['clean'] // remove formatting button
+
+	];
+	
+	
+	return toolbarOptions;
+	
+}
+
+function nuQuill(i, fontNames, toolbarOptions) {
+
+	if (typeof fontNames === 'undefined') {
+		var fontNames = nuQuillFonts(['Arial', 'Courier', 'Garamond', 'Tahoma', 'Verdana']);
+	}
+
+	if (typeof toolbarOptions === 'undefined') {
+		var toolbarOptions = nuQuillToolbarOptions(fontNames);
+	}
+		
+	nuHide(i);
+		
+	var Block = Quill.import('blots/block');
+	class DivBlock extends Block {} 
+	DivBlock.tagName = 'DIV';	
+	Quill.register('blots/block', DivBlock, true); 
+	
+	var Font = Quill.import('formats/font');
+	Font.whitelist = fontNames;
+	Quill.register(Font, true);
+
+	var quill = new Quill('#'+ i + '_container', {
+		modules: {
+			toolbar: toolbarOptions,
+			divider: {
+				cssText: 'border-top: 1px solid #bbb;'
+			},
+			 clipboard: {
+				matchVisual: false
+			}
+
+		},
+		theme: 'snow'
+	});
+		
+	var content = $('#' + i).val();
+	if (content !== '') {
+		quill.clipboard.dangerouslyPasteHTML(content);
+	}
+	
+	var startDate = new Date();
+	quill.on('text-change', function(delta, oldDelta, source) {
+		var endDate = new Date();
+		if (endDate.getTime() - startDate.getTime() > 1000) {
+			nuHasBeenEdited();
+		}
+	});
+
+}
+
+function nuQuillGetInstance(i) {
+
+	var container = document.querySelector('#'+ i + '_container');
+	var quill = new Quill(container);
+	if (Quill.find(container) === quill) {
+		return quill;
+	} else {
+		return null;
+	}
+
+}
+
+function nuQuillSetContents(i, contents) {
+
+	var quill = nuQuillGetInstance(i);
+	if (quill !== null) {
+		if ($.isArray(contents)) {
+			quill.setContents(contents);
+		} else {
+			quill.clipboard.dangerouslyPasteHTML(contents);
+		}
+	}
+
+}
+
+function nuQuillGetContents(i) {
+
+	var container = document.querySelector('#'+ i + '_container');
+	return container.children[0].innerHTML;
 
 }
 
@@ -1311,7 +1462,7 @@ function nuDecode(s){
 
 function nuAddRow(s){
 
-	var o 	= nuSubformObject(s);
+	var o	= nuSubformObject(s);
 
 	var i	= s + nuPad3(o.rows.length - 1) + o.fields[1];
 
@@ -1345,16 +1496,6 @@ function nuClosePopup(){
 	parent.$('#nuDragDialog').remove();
 
 }
-
-/*
-function nuStopClick(e){
-
-	if(window.nuCLICKER != ''){
-		$(e.target).prop('onclick',null).off('click');
-	}
-
-}
-*/
 
 function nuStopClick(e){
 
@@ -1421,7 +1562,7 @@ function nuSortSubform(s, c, e){
 
 	}
 
-	var top 	= 0;
+	var top	= 0;
 
 	for(var i = 0 ; i < rows.length ; i++){
 
@@ -1492,7 +1633,6 @@ function nuEmbedObject(f, d, w, h){
 }
 
 function nuStartDatabaseAdmin() {
-
 	window.open("core/nupmalogin.php?sessid="+window.nuSESSION);
 }
 
@@ -1572,8 +1712,8 @@ function nuResizeBrowseColumns(){
 
 		var W	= nuTotalWidth('nuBrowseFooter') + 22;
 
-		$('#nuDragDialog', 	window.parent.document).css('width', W + 14);
-		$('#nuWindow', 		window.parent.document).css('width', W);
+		$('#nuDragDialog',	window.parent.document).css('width', W + 14);
+		$('#nuWindow',		window.parent.document).css('width', W);
 
 		$('body').css('width', W);//.css('padding', '0px 0px 0px 7px');
 
@@ -1626,14 +1766,14 @@ function nuGetColumWidths(){
 }
 
 function nuDownBrowseResize(e, p){
-	
+
 	e.preventDefault();
-	
+
 	window.nuBROWSERESIZE.mouse_down		= true;
-	window.nuBROWSERESIZE.pointer			= p; // Added
-	
+	window.nuBROWSERESIZE.pointer			= p;
+
 	let target = e.target.id.replace('nusort_','nuBrowseTitle');
-	
+
 	window.nuBROWSERESIZE.moving_element	= target;
 	window.nuBROWSERESIZE.x_position		= e.clientX;
 
@@ -1644,11 +1784,11 @@ function nuDownBrowseResize(e, p){
 
 
 function nuEndBrowseResize(e){
-	
-	window.nuBROWSERESIZE.mouse_down 		= false;
-	window.nuBROWSERESIZE.moving_element 	= '';
+
+	window.nuBROWSERESIZE.mouse_down		= false;
+	window.nuBROWSERESIZE.moving_element	= '';
 	$('.nuBrowseTitle').css('background-color', '');
-	
+
 }
 
 
@@ -1659,40 +1799,40 @@ function nuDragBrowseColumn(e, p){
 
 //	if (window.nuBROWSERESIZE.mouse_down && window.nuBROWSERESIZE.moving_element == e.target.id){
 	if (window.nuBROWSERESIZE.mouse_down){
-		
+
 		window.nuBROWSERESIZE.pointer = p; // added
 		var id				= window.nuBROWSERESIZE.moving_element;
 		var offset_limit	= 100000000;
 		var min_offset		= 2;
 		var x				= e.pageX;
-		
+
 		if (window.nuBROWSERESIZE.pointer == "finger_touch"){
 			x				= e.changedTouches[0].clientX;
 		}
-		
+
 		var x_offset		= x - window.nuBROWSERESIZE.x_position;
 		
 		window.nuBROWSERESIZE.x_position	= x;
 
 		if (x !== 0 && Math.abs(x_offset) > min_offset){
-			
+
 			x_offset		= x_offset;
 			
 			if (x_offset < offset_limit){
-				
+
 				var c		= Number(window.nuBROWSERESIZE.moving_element.substr(13));
 								
 				var m		= nuFORM.breadcrumbs[nuFORM.breadcrumbs.length-1].column_widths[c] + x_offset
-				
+
 				if(m < 40){m=40;}
-				
+
 				nuFORM.breadcrumbs[nuFORM.breadcrumbs.length-1].column_widths[c] = m;
 				nuSetBrowserColumns(nuFORM.breadcrumbs[nuFORM.breadcrumbs.length-1].column_widths)
-				
+
 			}else{
 				console.log('Offset size exceeds limit');
 			}
-			
+
 		}
 
 	} 
@@ -1712,41 +1852,41 @@ function nuImportCSV(t, s){
 	var inserts	= [];
 
 	for(var i = 1 ; i < c.length ; i++){
-		
+
 		var r	= String(c[i]);
 		var c	= nuCSVcolumn(r);
-		
+
 		if(r.substr(0,2) == '"'){
 			R.push('"' + r.join('","') + '"');
 		}else{
-			
+
 			for(var f = 0 ; f < r.length ; f++){
-					
+
 				if(String(r[f]).substr(0,1) == '"'){
-					
+
 					var Q = f;
-					
+
 					for(var q = f ; q < r.length ; q++){
-						
+
 						if(String(r[q]).substr(String(r[q]).length - 1) != '"'){
-							
+
 							r[f] = r[f] + ',' + r[q];
 							r.splice(q,1)
-							
+
 						}
-						
+
 					}
-					
+
 				}
-				
+
 			}
-			
+
 			R.push('"' + r.join('","') + '"');
-			
+
 		}
-			
+
 	}
-	
+
 }
 
 function nuIsIframe(){
@@ -1759,7 +1899,7 @@ function nuIsIframe(){
 
 function nuPreventButtonDblClick () {
 
-	$('.nuActionButton, .nuButton').not(".nuAllowDblClick").click(function() {   
+	$('.nuActionButton, .nuButton, #nuLogout').not(".nuAllowDblClick").click(function() {
 
 	var id = $(this).attr("id");
 
@@ -1769,14 +1909,14 @@ function nuPreventButtonDblClick () {
 
 		function() {
 			$('#'+id).prop('disabled', false);
-		}	
+		}
 		, 1300);
 	});
 
 }
 
 function nuAddBackButton() {
-	
+
 	var b = $('.nuBreadcrumb').length;
 	if (b>0){
 		nuAddActionButton('BackBtn', nuTranslate('Back'), 'if (!nuFORM.edited) { nuDisable(this.id) }; nuOpenPreviousBreadcrumb();');
@@ -1785,7 +1925,7 @@ function nuAddBackButton() {
 }
 
 function nuEnableBrowserBackButton() {
-	
+
 	window.history.pushState({page: 1}, "", "");
 	window.onpopstate = function(event) {
 		if(event){
@@ -1825,7 +1965,7 @@ function nuSetBrowseColumnWidth(column, width) {
 }
 
 function nuBrowseAdditionalNavButtons() {
-	
+
 	if (nuFormType() == 'browse') {
 
 		var disabled = {
@@ -1862,7 +2002,7 @@ function nuPrintEditForm() {
 	$('#nuTabHolder').hide();
 	$('.nuActionButton').hide();
 
-  window.onafterprint = function(e){
+	window.onafterprint = function(e){
 		$(window).off('mousemove', window.onafterprint);
 
 		$('#nuBreadcrumbHolder').show();
@@ -1875,11 +2015,11 @@ function nuPrintEditForm() {
 	setTimeout(function(){
 		$(window).one('mousemove', window.onafterprint);
 	}, 1);
-	
+
 }
 
 function nuSetPlaceholder(i, placeholder, translate) {
-	
+
 	var f = $('#'+i);
 
 	if (typeof translate === 'undefined') {
@@ -1913,16 +2053,23 @@ function nuSetToolTip(i, message, labelHover) {
 
 function nuAddDatalist(i, a) {
 	
+	if (!$.isArray(a)) {
+		console.error('Argument #2 is not an array in nuAddDatalist()');
+		return;
+	}
+	
 	var datalist = document.createElement('datalist');
-	datalist.id = "datalist";
+	datalist.id = "datalist" + i;
 	document.body.appendChild(datalist);
 	a.forEach(function (data) {
-		var option = document.createElement('option');				
+	
+		var option = document.createElement('option');		
+
 		option.value =	$.isArray(data) ? data[0]: data;
-		option.text =	$.isArray(data) ? data[1]: data;
+		if (data.length == 2) option.text =	$.isArray(data) ? data[1]: data;
 		datalist.appendChild(option);
 	});
-	$('#' + i).attr('list', "datalist").attr('autocomplete', 'off');
+	$('#' + i).attr('list', datalist.id).attr('autocomplete', 'off');
 	
 }
 
@@ -1953,13 +2100,13 @@ jQuery.fn.nuLabelOnTop = function (offsetTop = -18, offsetLeft = 0) {
 };
 
 jQuery.fn.cssNumber = function(prop) {
-	
+
 	var v = parseInt(this.css(prop), 10);
 	return isNaN(v) ? 0 : v;
-	
+
 };
 
-function nuDisableAllObjects(excludeTypes, excludeIds) {
+function nuEnableDisableAllObjects(v, excludeTypes, excludeIds) {
 
 	if (typeof excludeTypes === 'undefined') {
 		let excludeTypes = [];
@@ -1968,34 +2115,51 @@ function nuDisableAllObjects(excludeTypes, excludeIds) {
 	if (typeof excludeIds === 'undefined') {
 		let excludeIds = [];
 	}
-	
+
 	var r = JSON.parse(JSON.stringify(nuSERVERRESPONSE));
 	for (var i = 0; i < r.objects.length; i++) {
 		let obj = r.objects[i];
-		
+
 		if ($.inArray(obj.type, excludeTypes) == -1 && $.inArray(obj.id, excludeIds) == -1 ) {
-			nuDisable(obj.id);
+			nuEnable(obj.id, v);
 		}
 	}
-	
+
+}
+
+function nuEnableAllObjects(excludeTypes, excludeIds) {
+
+	 nuEnableDisableAllObjects(true, excludeTypes, excludeIds);
+ 
+}
+
+function nuDisableAllObjects(excludeTypes, excludeIds) {
+
+	nuEnableDisableAllObjects(false, excludeTypes, excludeIds);
+
 }
 
 function nuInsertTextAtCaret(i, text) {
+
+	var o = $('#'+ i);
 	
-	const textarea = $('#'+ i)[0];
+	const textarea = o[0];
+	
 	textarea.setRangeText(
-	text,
-	textarea.selectionStart,
-	textarea.selectionEnd,
-	'end'
-)
+		text,
+		textarea.selectionStart,
+		textarea.selectionEnd,
+		'end'		
+	);
+	
+	o.change();
 
 }
 
 function nuObjectIdFromId(i) {
 
 	if (i !== null) {
-	
+
 		var f = window.nuSERVERRESPONSE;
 		var objId;
 		for (var o = 0; o < f.objects.length; o++) {
@@ -2016,18 +2180,18 @@ function nuObjectIdFromId(i) {
  * @param	{int}	size		- Size in pixels
  */
 function nuSetBrowseColumnSize(column, size) {
-	
+
 	var cw = this;
 	if (nuIsIframe()) {
 		cw = parent.$("#" + window.frameElement.id)[0].contentWindow;
 	}
 	cw.nuFORM.breadcrumbs[cw.nuFORM.breadcrumbs.length - 1].column_widths[column] = size;
 	cw.nuSetBrowserColumns(cw.nuFORM.breadcrumbs[cw.nuFORM.breadcrumbs.length - 1].column_widths)
-	
+
 }
 
 function nuCreateAppendHTML(htmlStr) {
-	
+
 	var df = document.createDocumentFragment()
 		, temp = document.createElement('div');
 	temp.innerHTML = htmlStr;
@@ -2041,7 +2205,7 @@ function nuSelectMultiWithoutCtrl(i) {
 
 	i = i === undefined ? 'select' : '#' + i;
 	$(i + "[multiple] option").mousedown(function (event) {
-	
+
 	 if (event.shiftKey) return;
 	 event.preventDefault();
 	 this.focus();
@@ -2060,7 +2224,7 @@ function nuPasteText(t) {
 		.then(text => {
 			$('#' + t).val(text);
 		});
-		
+
 }
 
 function nuRefreshSelectObject(selectId, formId) {
@@ -2085,3 +2249,44 @@ function nuRefreshDisplayObject(displayId, formId) {
 	nuRunPHPHidden('nurefreshdisplayobject', 0);
 }
 
+function nuCursor(c) {
+
+	document.documentElement.style.cursor = c;
+	parent.document.documentElement.style.cursor = c;
+
+}
+
+/*	*** Based on highlight v5: Highlights arbitrary terms.
+	*** Renamed to nuHighlight using the className nuBrowseSearch
+	*** <http://johannburkard.de/blog/programming/javascript/highlight-javascript-text-higlighting-jquery-plugin.html>
+	*** MIT license.
+	*** Johann Burkard <http://johannburkard.de> / <mailto:jb@eaio.com>
+*/
+
+jQuery.fn.nuHighlight = function(pat) {
+	function innerHighlight(node, pat) {
+		var skip = 0;
+		if (node.nodeType == 3) {
+			var pos = node.data.toUpperCase().indexOf(pat);
+			pos -= (node.data.substr(0, pos).toUpperCase().length - node.data.substr(0, pos).length);
+			if (pos >= 0) {
+				var spannode = document.createElement('span');
+				spannode.className = 'nuBrowseSearch';
+				var middlebit = node.splitText(pos);
+				var endbit = middlebit.splitText(pat.length);
+				var middleclone = middlebit.cloneNode(true);
+				spannode.appendChild(middleclone);
+				middlebit.parentNode.replaceChild(spannode, middlebit);
+				skip = 1;
+			}
+		} else if (node.nodeType == 1 && node.childNodes && !/(script|style)/i.test(node.tagName)) {
+			for (var i = 0; i < node.childNodes.length; ++i) {
+				i += innerHighlight(node.childNodes[i], pat);
+			}
+		}
+		return skip;
+	}
+	return this.length && pat && pat.length ? this.each(function() {
+		innerHighlight(this, pat.toUpperCase());
+	}) : this;
+};

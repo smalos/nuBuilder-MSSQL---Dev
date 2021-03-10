@@ -3,14 +3,20 @@
 mb_internal_encoding('UTF-8');
 
 $_POST['RunQuery']		= 0;
+
+
+$DBDriver				= $_SESSION['nubuilder_session_data']['DB_DRIVER'];
 $DBHost					= $_SESSION['nubuilder_session_data']['DB_HOST'];
+$DBPort					= $_SESSION['nubuilder_session_data']['DB_PORT'];
 $DBName					= $_SESSION['nubuilder_session_data']['DB_NAME'];
 $DBUser					= $_SESSION['nubuilder_session_data']['DB_USER'];
 $DBPassword				= $_SESSION['nubuilder_session_data']['DB_PASSWORD'];
 $DBCharset				= $_SESSION['nubuilder_session_data']['DB_CHARSET'];
 
 try {
-	$nuDB 				= new PDO("mysql:host=$DBHost;dbname=$DBName;charset=$DBCharset", $DBUser, $DBPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES $DBCharset"));
+	// MySQL + MSSQL DSN
+	$dsn = $DBDriver == 'mysql' ? "mysql:host=$DBHost;dbname=$DBName;charset=$DBCharset" : "sqlsrv:server=$DBHost,$DBPort;Database=$DBName;ConnectionPooling=0";
+	$nuDB = new PDO($dsn, $DBUser, $DBPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES $DBCharset"));
 	$nuDB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
 	echo 'Connection failed: ' . $e->getMessage();
@@ -112,9 +118,12 @@ $trace
 
 }
 
-
 function db_is_auto_id($table, $pk){
 
+	if (nuMSSQL()) {
+		$s = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '$table' AND COLUMN_NAME = '$pk'";
+		return; // xx
+	}
 	$s		= "SHOW COLUMNS FROM `$table` WHERE `Field` = '$pk'";
 	$t		= nuRunQuery($s);									//-- mysql's way of checking if its an auto-incrementing id primary key
 	$r		= db_fetch_object($t);
@@ -159,7 +168,7 @@ function db_field_info($n){
 	$types		= array();
 	$pk			= array();
 
-	$s		 = "DESCRIBE $n";
+	$s		= nuDescribeTableSQL($n);
 	$t		= nuRunQuery($s);
 
 	while($r = db_fetch_row($t)){
@@ -180,7 +189,7 @@ function db_field_info($n){
 function db_field_names($n){
 
 	$a	= array();
-	$s	= "DESCRIBE $n";
+	$s		= nuTableInfoSQL()."$n";
 	$t	= nuRunQuery($s);
 
 	while($r = db_fetch_row($t)){
@@ -195,7 +204,7 @@ function db_field_names($n){
 function db_field_types($n){
 
 	$a		= array();
-	$s		= "DESCRIBE $n";
+	$s		= nuTableInfoSQL()."$n";
 	$t		= nuRunQuery($s);
 
 	while($r = db_fetch_row($t)){
@@ -210,7 +219,7 @@ function db_field_types($n){
 function db_primary_key($n){
 
 	$a		= array();
-	$s		= "DESCRIBE $n";
+	$s		= nuTableInfoSQL()."$n";
 	$t		= nuRunQuery($s);
 
 	while($r = db_fetch_row($t)){
@@ -222,6 +231,13 @@ function db_primary_key($n){
 	}
 
 	return $a;
+
+}
+
+function nuDBQuote($s) {
+
+	global $nuDB;
+	return $nuDB->quote($s);
 
 }
 
@@ -314,6 +330,74 @@ function nuID(){
 
 }
 
+// This function will return the quote character required when quoting database table names and field names that have spaces in them.
+// Return The Identifier quote character required.
+function nuIdentCol($s) {
 
+	global $DBDriver;
+	return $DBDriver == 'mysql' ? '`'.$s.'`' : '['.$s.']';
+
+}
+
+function nuMSSQL() {
+
+	global $DBDriver;
+	return $DBDriver == 'sqlsrv';
+
+}
+
+function nuTableInfoSQL() {
+
+	return nuMSSQL() ? 'sp_columns ' : 'DESCRIBE ';
+
+}
+
+function nuDescribeTableSQL($table) {
+	
+	if (! nuMSSQL()) return "DESCRIBE ".$table;
+	
+	return "
+		SELECT   
+		   C.column_name AS [Field],
+		   DATA_TYPE + CASE
+						 WHEN CHARACTER_MAXIMUM_LENGTH IS NULL THEN ''
+						 WHEN CHARACTER_MAXIMUM_LENGTH > 99999 THEN ''
+						 ELSE '(' + Cast(CHARACTER_MAXIMUM_LENGTH AS VARCHAR(5)) + ')' 
+					   END AS [Type],
+		   IS_NULLABLE AS [Null],
+		   Case When CONSTRAINT_TYPE = 'PRIMARY KEY' THEN 'PRI' ELSE '' END as [Key]
+		FROM
+		   INFORMATION_SCHEMA.Columns C 
+		   JOIN
+			  INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE U 
+			  ON U.TABLE_NAME = C.table_name 
+		   JOIN
+			  INFORMATION_SCHEMA.TABLE_CONSTRAINTS T 
+			  ON U.CONSTRAINT_NAME = T.CONSTRAINT_NAME 
+		WHERE
+		   C.table_name = '$table'
+		   and C.TABLE_CATALOG = DB_NAME()
+	";   
+
+}
+
+
+
+function nuSchemaWhereCurrentDBSQL() {
+
+	return nuMSSQL() ? ' TABLE_CATALOG = db_name() ' : ' table_schema = DATABASE() ';
+
+}
+
+function nuCreateTableFromSelectSQL($table, $select) {
+	
+	if (! nuMSSQL()) return "CREATE TABLE $table $select";
+	
+	$pos = strrpos( $select, 'FROM' );
+	$selectInto = substr( $select, 0, $pos ) .  ' INTO [' . $table . '] ' . substr( $select, $pos );	
+
+	return $selectInto;
+	
+}
 
 ?>

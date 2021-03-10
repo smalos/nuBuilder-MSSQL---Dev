@@ -9,7 +9,7 @@ define('FPDF_FONTPATH','libs/tcpdf/font/');
 $GLOBALS['nu_report']		= array();
 $GLOBALS['nu_columns']		= array();
 $GLOBALS['nu_files']		= array();
-$get 						= isset($_GET['i']);
+$get						= isset($_GET['i']);
 
 if($get){
 	$jsonID					= $_GET['i'];
@@ -17,8 +17,8 @@ if($get){
 	$jsonID					= $_POST['ID'];
 }
 
-
 $J							= nuGetJSONData($jsonID);
+
 $TABLE_ID					= nuTT();
 $JSON						= json_decode($J);
 $LAYOUT						= json_decode($JSON->sre_layout);
@@ -32,7 +32,7 @@ $PDF->SetAutoPageBreak(true);
 // The report writer makes the header and footer so dont need a print header or footer.
 $PDF->setPrintHeader(false);
 $PDF->setPrintFooter(false);
-$REPORT					 = nuSetPixelsToMM($LAYOUT);
+$REPORT						= nuSetPixelsToMM($LAYOUT);
 
 $PDF->SetMargins(1,1,1);
 
@@ -66,9 +66,10 @@ nuRunQuery("DROP TABLE IF EXISTS $TABLE_ID".'_nu_summary');
 
 
 if($get){
+	ob_end_clean();
 	$PDF->Output('nureport.pdf', 'I');
 }else{
-	nuSavePDF($PDF);
+	nuSavePDF($PDF, $JSON->code);
 }
 
 
@@ -76,8 +77,8 @@ nuRemoveFiles();
 
 function nuPrintReport($PDF, $LAY, $DATA, $JSON){
 
-	$lastSectionTop 			= 10000;
-	$pageNumber	 			= 0;
+	$lastSectionTop			= 10000;
+	$pageNumber				= 0;
 
 	for($s = 0 ; $s < count($DATA) ; $s++){
 
@@ -168,7 +169,7 @@ function nuBuildReport($PDF, $REPORT, $TABLE_ID){
 	$group_by							= '';
 	$order['a']							= 'asc ';
 	$order['d']							= 'desc ';
-	$lastROW							= 1; 	
+	$lastROW							= 1;
 
 	for($i = 3 ; $i < 8 ; $i++){
 		if($REPORT->groups[$i]->sortField != ''){			  //-- loop through groups
@@ -190,36 +191,36 @@ function nuBuildReport($PDF, $REPORT, $TABLE_ID){
 	$DATA								= nuRunQuery("SELECT * FROM $TABLE_ID");
 	
 	nuMakeSummaryTable($REPORT, $TABLE_ID);
-	$sectionTop								= 0;
-	$ROW									= db_fetch_array($DATA);														 //-- first row
-//======================================================	
+	$sectionTop							= 0;
+	$ROW								= db_fetch_array($DATA);														 //-- first row
+//======================================================
 //	  REPORT HEADER
-//======================================================	
+//======================================================
 	$S									= new nuSECTION($PDF, $ROW, $REPORT, 1, 0, 0);								   //-- report header
 	$sectionTop							= $S->buildSection();
 	$firstRecord						= true;
 
-//======================================================	
+//======================================================
 //	  PAGE HEADER
-//======================================================	
+//======================================================
 	$S									= new nuSECTION($PDF, $ROW, $REPORT, 2, 0, $sectionTop);								   //-- page header
 	$sectionTop							= $S->buildSection();
 	$firstRecord						= true;
 
-//======================================================	
+//======================================================
 //	  FIRST SECTION HEADERS
-//======================================================	
+//======================================================
 	for($g = 0 ; $g < count($groups) ; $g++){
 		
 		$S								= new nuSECTION($PDF, $ROW, $REPORT, 3 + $g, 0, $sectionTop);				   //-- section headers
-		$sectionTop						= $S->buildSection();
+		$sectionTop						= $S->buildSection();		
 		$sectionValue[$groups[$g]]		= $ROW[$groups[$g]];
 
 	}
 
-//======================================================	
+//======================================================
 //	  LOOP THROUGH TABLE
-//======================================================	
+//======================================================
 	$DATA								= nuRunQuery("SELECT * FROM (SELECT * FROM $TABLE_ID $order_by $group_by) AS tmp ");
 	while($ROW = db_fetch_array($DATA)){
 
@@ -227,9 +228,9 @@ function nuBuildReport($PDF, $REPORT, $TABLE_ID){
 
 			$backUpTo					= nuLowestGroupChange($sectionValue, $ROW, $groups);
 
-//======================================================	
+//======================================================
 //	  FOOTERS AND HEADERS AS GROUPS CHANGE
-//======================================================	
+//======================================================
 			for($g = count($groups) - 1 ; $g >= $backUpTo ; $g--){
 
 				$S							= new nuSECTION($PDF, $lastROW, $REPORT, 3 + $g, 1, $sectionTop);				   //-- section footers
@@ -248,18 +249,18 @@ function nuBuildReport($PDF, $REPORT, $TABLE_ID){
 
 		}
 
-//======================================================	
+//======================================================
 //	  DETAIL SECTION
-//======================================================	
+//======================================================
 		$S									= new nuSECTION($PDF, $ROW, $REPORT, 0, 0, $sectionTop);
 		$sectionTop							= $S->buildSection();
 		$lastROW							= $ROW;
 		$firstRecord						= false;
 	}
 
-//======================================================	
+//======================================================
 //	  LAST GROUP FOOTERS
-//======================================================	
+//======================================================
 	for($g = count($groups) - 1 ; $g > -1 ; $g--){
 
 		$S								= new nuSECTION($PDF, $lastROW, $REPORT, 3 + $g, 1, $sectionTop);				   //-- section footers
@@ -267,15 +268,15 @@ function nuBuildReport($PDF, $REPORT, $TABLE_ID){
 		if($g == 0) {
 			nuRemovePageBreak($S);
 		}
-		$sectionTop						 = $S->buildSection();
+		$sectionTop						= $S->buildSection();
 
 	}
 
-//======================================================	
+//======================================================
 //	  REPORT FOOTER
-//======================================================	
+//======================================================
 	$S									= new nuSECTION($PDF, $lastROW, $REPORT, 1, 1, $sectionTop);
-	$sectionTop							 = $S->buildSection();
+	$sectionTop							= $S->buildSection();
 
 }	
 
@@ -623,7 +624,7 @@ class nuSECTION{
 			$lineNoNR		= str_replace ("\n\r", "\r", $text);
 			$lineNoRN		= str_replace ("\r\n", "\r", $lineNoNR);
 			$lineJustR		= str_replace ("\n", "\r", $lineNoRN);
-			$lines		 	= explode("\r", $lineJustR);						//-- add empty array elements for carriage returns
+			$lines			= explode("\r", $lineJustR);						//-- add empty array elements for carriage returns
 
 		}else{
 
@@ -802,7 +803,7 @@ function pdfSection($g, $s, $t, $h){		//-- section
 
 	$c					= new stdClass;
 	$c->objects			= array();
-	$c->group		 	= $g;
+	$c->group			= $g;
 	$c->section			= $s;
 	$c->sectionTop		= $t;
 	$c->sectionHeight	= $h;
@@ -901,11 +902,9 @@ function nuPrintField($PDF, $S, $contents, $O, $LAY){
 	$PDF->SetFont($fontFamily, $fontWeight, $fontSize, '', false);
 	$PDF->SetLineWidth($borderWidth / 5);
 	$PDF->SetXY($left, $top);
-
-	$l = 'Hleď, toť přízračný kůň v mátožné póze šíleně úpí';
+	
 	$t = implode("\n", $contents->lines);
-	$txt = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
-
+	
 	if($t == 'KEEP EXACT HEIGHT'){
 		$PDF->Rect($left, $top, $width, $height, 'DF');
 	}else{
@@ -947,7 +946,7 @@ function nuReplaceLabelHashVariables($LAY, $hashData){
 	for($i = 0 ; $i < count($GLOBALS['nu_report']) ; $i++){
 
 		for($o = 0 ; $o < count($GLOBALS['nu_report'][$i]->objects) ; $o++){
-
+			
 			$O = nuGetObjectProperties($LAY, $GLOBALS['nu_report'][$i]->objects[$o]->id);
 
 			if($O->objectType == 'label'){
@@ -1111,8 +1110,15 @@ function nuRemovePageBreak($S){
 	}
 }
 
-function nuSavePDF($PDF) {
+function nuSavePDF($PDF, $code = '') {
 
+	if($_SESSION['nubuilder_session_data']['IS_DEMO']){
+
+		nuDisplayError('Not available in the Demo...');
+		return;
+
+	}
+	
 	// save PDF file on the server in the ./temp directory
 	$filename1 = 'nupdf_' . nuID() . '.pdf';
 	$dir = dirname(getcwd()) . '/temp/';
@@ -1129,13 +1135,14 @@ function nuSavePDF($PDF) {
 		$q1 = "CREATE TABLE IF NOT EXISTS pdf_temp (
 			pdf_temp_id VARCHAR(25) PRIMARY KEY,
 			pdf_added_by VARCHAR(25),
+			pdf_code VARCHAR(100),
 			pdf_file_name VARCHAR(255),
 			pdf_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			); ";
 		nuRunQuery($q1);
 
-		$q1 = "INSERT INTO pdf_temp (pdf_temp_id,pdf_added_by,pdf_file_name)
-					VALUES ('$rid','$usr','$filename');";
+		$q1 = "INSERT INTO pdf_temp (pdf_temp_id,pdf_added_by,pdf_code,pdf_file_name)
+					VALUES ('$rid','$usr','$code','$filename');";
 		nuRunQuery($q1);
 	}
 	else {
