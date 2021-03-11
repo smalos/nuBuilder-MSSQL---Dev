@@ -104,8 +104,12 @@ class nuSqlString{
 
 	function __construct($sql){
 
-		$sql				= str_replace(chr(13), ' ', $sql);//----remove carrige returns
-		$sql				= str_replace(chr(10), ' ', $sql);//----remove line feeds
+		$sql				= str_replace(chr(13), ' ', $sql);				//----remove carrige returns
+		$sql				= str_replace(chr(10), ' ', $sql);				//----remove line feeds
+
+		if (nuMSSQL()) {
+			$sql			= str_replace('LOCATE(', 'CHARINDEX(', $sql);
+		}
 
 		$from_string		= stristr($sql, ' from ');
 		$where_string		= stristr($sql, ' where ');
