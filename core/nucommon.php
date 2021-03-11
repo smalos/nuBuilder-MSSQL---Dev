@@ -65,6 +65,16 @@ function nuTT(){
 
 }
 
+function nuAddslashes($data) { 
+
+	if (nuMSSQL()) {
+		return str_replace("'", "''", $data); 
+	} else {
+		return addslashes($data);
+	}
+
+}
+
 function nuErrorFound(){
 
 	if(isset($GLOBALS['ERRORS'])){
@@ -247,8 +257,8 @@ function nuObjKey($o, $k, $d = null) {
 
 function nuSetHashList($p){
 
-	$fid		= addslashes(nuObjKey($p,'form_id'));
-	$rid		= addslashes(nuObjKey($p,'record_id'));
+	$fid		= nuAddslashes(nuObjKey($p,'form_id'));
+	$rid		= nuAddslashes(nuObjKey($p,'record_id'));
 	$r			= array();
 	$A			= nuGetUserAccess();
 	$s			= "SELECT sfo_table, sfo_primary_key FROM zzzzsys_form WHERE zzzzsys_form_id = '$fid'";
@@ -270,7 +280,7 @@ function nuSetHashList($p){
 				if(is_object($f) ){
 
 					foreach ($f as $fld => $value ){									//-- This Edit Form's Object Values
-						$r[$fld] = addslashes($value);
+						$r[$fld] = nuAddslashes($value);
 					}
 
 				}
@@ -283,7 +293,7 @@ function nuSetHashList($p){
 	foreach ($p as $key => $value){														//-- The 'opener' Form's properties
 
 		if(gettype($value) == 'string' or is_numeric ($value)){
-			$h[$key]			= addslashes($value);
+			$h[$key]			= nuAddslashes($value);
 		}else{
 			$h[$key]			= '';
 		}
@@ -295,7 +305,7 @@ function nuSetHashList($p){
 		foreach ($p['hash'] as $key => $value){											//-- The 'opener' Form's hash variables
 
 			if(gettype($value) == 'string' or is_numeric ($value)){
-				$h[$key]			= addslashes($value);
+				$h[$key]			= nuAddslashes($value);
 			}else{
 				$h[$key]			= '';
 			}
@@ -304,12 +314,12 @@ function nuSetHashList($p){
 
 	}
 
-	$h['PREVIOUS_RECORD_ID']	= addslashes($rid);
-	$h['RECORD_ID']				= addslashes($rid);
-	$h['FORM_ID']				= addslashes($fid);
-	$h['SUBFORM_ID']			= addslashes(nuObjKey($_POST['nuSTATE'],'object_id')); 
-	$h['ID']					= addslashes(nuObjKey($_POST['nuSTATE'],'primary_key')); 
-	$h['CODE']					= addslashes(nuObjKey($_POST['nuSTATE'],'code')); 
+	$h['PREVIOUS_RECORD_ID']	= nuAddslashes($rid);
+	$h['RECORD_ID']				= nuAddslashes($rid);
+	$h['FORM_ID']				= nuAddslashes($fid);
+	$h['SUBFORM_ID']			= nuAddslashes(nuObjKey($_POST['nuSTATE'],'object_id')); 
+	$h['ID']					= nuAddslashes(nuObjKey($_POST['nuSTATE'],'primary_key')); 
+	$h['CODE']					= nuAddslashes(nuObjKey($_POST['nuSTATE'],'code')); 
 
 	$cj = array();
 	if (nuMSSQL()) {
@@ -1040,7 +1050,7 @@ function nuBuildTempTable($name_id, $tt, $rd = 0){
 		}
 
 		$p			= nuReplaceHashVariables($c);
-		$tt			= addslashes($tt);
+		$tt			= nuAddslashes($tt);
 
 		$P			= nuCreateTableFromSelectSQL($tt, $p);
 		$P			.= 'nuRunQuery($sql);';
@@ -1671,17 +1681,17 @@ function nuFromCSV($file, $table, $d){
 
 		$name = $a[0][$i];
 		$size = $w[$i];
-		$columns[] = '`' . $name . '`';
+		$columns[] = nuIdentCol($name);
 
 		if($size > 3000){
-			$c[] = "`$name` text NOT NULL";
+			$c[] = nuIdentCol("$name"). " text NOT NULL";
 		}else{
-			$c[] = "`$name` varchar($size) NOT NULL";
+			$c[] = nuIdentCol("$name"). " varchar($size) NOT NULL";
 		}
 
 	}
 
-	nuRunQuery("CREATE TABLE `$table` (" . implode(',',$c) . ") CHARSET=utf8;");
+	nuRunQuery("CREATE TABLE $table (" . implode(',',$c) . ") CHARSET=utf8;");
 
 	if(!in_array($table, nuListTables())){
 
@@ -1690,7 +1700,7 @@ function nuFromCSV($file, $table, $d){
 
 	}
 
-	$s1 = "INSERT INTO `$table` (" . implode(',',$columns) . ") VALUES " ;
+	$s1 = "INSERT INTO $table (" . implode(',',$columns) . ") VALUES " ;
 
 	for($I = 1 ; $I < count($a) ; $I++){
 
@@ -1706,7 +1716,7 @@ function nuFromCSV($file, $table, $d){
 
 	nuRunQuery($s1 . implode(',',$rows));
 
-	nuRunQuery("ALTER TABLE `$table` ADD PRIMARY KEY(`$id`);");
+	nuRunQuery("ALTER TABLE" . nuIdentCol($table). " ADD PRIMARY KEY(" . nuIdentCol($id). ");");
 
 	print "<br>" . "&nbsp;&nbsp;" . nuTranslate("A table called") . "&nbsp;<b>$table</b>&nbsp;" . nuTranslate("has been created in the database");
 

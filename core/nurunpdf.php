@@ -1030,7 +1030,7 @@ function nuAddCriteriaValues($hashData, $T){
 
 		if( !in_array(strtolower($key), $c) and !is_array($value) and !is_object($value)){
 
-				$v = substr(addslashes($value),0,199);
+				$v = substr(nuAddslashes($value),0,199);
 
 				if(substr($v,(strlen($v)-1),1) == '\\')
 

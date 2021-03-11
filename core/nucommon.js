@@ -1179,6 +1179,15 @@ function nuAddSlashes(s){
 	return (s + '').replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
 }
 
+/*
+function nuAddSlashes(s){
+	if (nuSERVERRESPONSE.db_driver !== 'sqlsrv') {
+		return (s + '').replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
+	} else {
+		return (s + '').replace(/[\\"']/g, "'");
+	}
+}
+*/
 
 function nuOpenTab(i){
 	$('#nuTab' + i).click();

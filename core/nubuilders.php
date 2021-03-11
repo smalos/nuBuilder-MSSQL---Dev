@@ -80,11 +80,11 @@ function nuBuildFastForm($table, $form_type){
 		$table						= 'Launch Form ' . nuFastForms();
 	}
 
-	$q								= nuRunQuery("SELECT table_name FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = DATABASE()");
+	$q								= nuRunQuery("SELECT table_name as TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE". nuSchemaWhereCurrentDBSQL());
 
 	while($tableSchemaOBJ = db_fetch_object($q)){
 
-		if($table == $tableSchemaOBJ->table_name){
+		if($table == $tableSchemaOBJ->TABLE_NAME){
 
 			$_POST['tableSchema']	= nuBuildTableSchema();
 			$PK						= $_POST['tableSchema'][$table]['primary_key'][0];
@@ -142,7 +142,7 @@ function nuBuildFastForm($table, $form_type){
 
 	nuRunQuery($sql, $array);
 
-	$sql			= nuCreateTableFromSelectSQL("$TT", "SELECT * FROM zzzzsys_object WHERE false");	
+	$sql			= nuCreateTableFromSelectSQL("$TT", "SELECT * FROM zzzzsys_object WHERE 1=0");	
 	
 	nuRunQuery($sql);
 
@@ -165,6 +165,7 @@ function nuBuildFastForm($table, $form_type){
 		}
 
 	}
+
 
 	$sql			= "
 
@@ -243,8 +244,10 @@ function nuBuildFastForm($table, $form_type){
 
 		nuRunQuery($create);
 
-		nuRunQuery("ALTER TABLE $table ENGINE = MyISAM;");
-		nuRunQuery("ALTER TABLE $table CONVERT TO CHARACTER SET UTF8 COLLATE utf8_general_ci");
+		if (! nuMSSQL()) {
+			nuRunQuery("ALTER TABLE $table ENGINE = MyISAM;");
+			nuRunQuery("ALTER TABLE $table CONVERT TO CHARACTER SET UTF8 COLLATE utf8_general_ci");
+		}
 	
 
 	}else{
@@ -307,8 +310,15 @@ function nuBuildFastForm($table, $form_type){
 
 		//----------make sure button has a tab--------------------
 		
-
-		$sql			= "REPLACE INTO zzzzsys_tab (zzzzsys_tab_id, syt_zzzzsys_form_id, syt_title, syt_order) VALUES ('nufastforms', 'nuuserhome', 'Fast Forms', -1);";
+		if (nuMSSQL()) {
+			$sql = "
+				UPDATE zzzzsys_tab SET syt_zzzzsys_form_id = 'nuuserhome', syt_title = 'Fast Forms', syt_order = -1  WHERE zzzzsys_tab_id = 'nufastforms'
+				IF @@ROWCOUNT = 0
+				INSERT INTO zzzzsys_tab (zzzzsys_tab_id, syt_zzzzsys_form_id, syt_title, syt_order) VALUES ('nufastforms', 'nuuserhome', 'Fast Forms', -1);
+			";
+		} else {
+			$sql			= "REPLACE INTO zzzzsys_tab (zzzzsys_tab_id, syt_zzzzsys_form_id, syt_title, syt_order) VALUES ('nufastforms', 'nuuserhome', 'Fast Forms', -1);";
+		}
 		nuRunQuery($sql);
 
 		//----------add run button--------------------
@@ -371,7 +381,7 @@ function nuBuildFastForm($table, $form_type){
 
 function nuFastFormsMaxTop(){
 	
-	$s			= 'SELECT MAX(sob_all_top) as max_top FROM zzzzsys_object WHERE sob_all_zzzzsys_tab_id = "nufastforms"';
+	$s			= "SELECT MAX(sob_all_top) as max_top FROM zzzzsys_object WHERE sob_all_zzzzsys_tab_id = 'nufastforms'";
 	$t			= nuRunQuery($s);
 	$r			= db_fetch_object($t);
 	
@@ -381,7 +391,7 @@ function nuFastFormsMaxTop(){
 
 function nuFastForms(){
 	
-	$s			= 'SELECT COUNT(*) AS ff FROM zzzzsys_object WHERE sob_all_zzzzsys_tab_id = "nufastforms"';
+	$s			= "SELECT COUNT(*) AS ff FROM zzzzsys_object WHERE sob_all_zzzzsys_tab_id = 'nufastforms'";
 	$t			= nuRunQuery($s);
 	$r			= db_fetch_object($t);
 	
@@ -394,6 +404,7 @@ function nuFastForms(){
 function nuBuildNewTable($tab, $array, $newT){
 
 	$id			= $tab . '_id';
+	$start	= "CREATE TABLE $tab";
 	$a			= Array();
 	$a[]		= "$id VARCHAR(25) NOT NULL";
 
@@ -424,8 +435,9 @@ function nuBuildNewTable($tab, $array, $newT){
 
 	$a[] = "PRIMARY KEY ($id)";
 	$im  = implode(',', $a);
-	
-	$sql = nuCreateTableFromSelectSQL("$tab", "$im");		
+
+	return "$start ($im)";
 
 }
+
 ?>

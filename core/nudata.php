@@ -281,7 +281,7 @@ function nuUpdateDatabase(){
 								$F[]	= nuIdentCol($fld) . " = null";
 							} else
 							{
-								$add = addslashes($v);	
+								$add = nuAddslashes($v);	
 								$V[]	= "'$add'";
 								$F[]	= nuIdentCol($fld) ." = '$add'";
 							}
@@ -298,7 +298,7 @@ function nuUpdateDatabase(){
 
 					$jd			= new stdClass;
 					$jd->added	= Array('user' => $user, 'time' => time());
-					$je			= addslashes(json_encode($jd));
+					$je			= nuAddslashes(json_encode($jd));
 					$V[]		= "'$je'";
 					$I[]		= nuIdentCol("$table"."_nulog");
 
@@ -342,7 +342,7 @@ function nuUpdateDatabase(){
 
 							}
 
-							$je		= addslashes(json_encode($jd));
+							$je		= nuAddslashes(json_encode($jd));
 							$sql	= "UPDATE $table SET $table" . "_nulog = '$je' WHERE " . nuIdentCol($pk) . " '$pv';";
 							$S[]	= $sql;
 

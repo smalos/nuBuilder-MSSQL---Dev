@@ -76,7 +76,7 @@ function nuBeforeEdit($FID, $RID){
 
 				}
 
-				$je				= addslashes(json_encode($jd));
+				$je				= nuAddslashes(json_encode($jd));
 				$S				= "UPDATE $r->sfo_table SET $logfield = '$je' WHERE $r->sfo_primary_key = ? ";
 				$T				= nuRunQuery($S, array($RID));
 
@@ -230,7 +230,7 @@ function nuGetFormObject($F, $R, $OBJS, $tabs = null){
 				}else{
 
 					$o->html		= '';
-					$htmljs			= addSlashes($r->sob_html_javascript);
+					$htmljs			= nuAddslashes($r->sob_html_javascript);
 
 					$v = isset($r->sob_html_vertictal_label) ? $r->sob_html_vertictal_label : '';
 					$h = isset($r->sob_html_horizontal_label) ? $r->sob_html_horizontal_label : '';
@@ -1077,12 +1077,12 @@ function nuBrowseWhereClause($searchFields, $searchString, $returnArray = false)
 			if (substr($wordSearches[$i], 0, 1) == '-' and strlen($wordSearches[$i]) > 1) {				//-- check for a preceeding minus
 
 				$task[]		= 'exclude';
-				$SEARCHES[]	= $quo . '%' . addslashes(substr($wordSearches[$i], 1)) . '%' . $quo;		//-- add word to exclude
+				$SEARCHES[]	= $quo . '%' . nuAddslashes(substr($wordSearches[$i], 1)) . '%' . $quo;		//-- add word to exclude
 
 			} else {
 
 				$task[]		= 'include';
-				$SEARCHES[]	= $quo . '%' . addslashes($wordSearches[$i]) . '%' . $quo;					//-- add word to include
+				$SEARCHES[]	= $quo . '%' . nuAddslashes($wordSearches[$i]) . '%' . $quo;					//-- add word to include
 				$highlight[]= $wordSearches[$i];
 
 			}
@@ -1572,7 +1572,7 @@ function nuPreloadImages($a){
 		$r	= db_fetch_object($t);
 
 		$tr	= trim($r->sfi_code);
-		$js = $js . "\nnuImages['$tr'] = '" . addslashes($r->sfi_json) . "';";
+		$js = $js . "\nnuImages['$tr'] = '" . nuAddslashes($r->sfi_json) . "';";
 
 	}
 
