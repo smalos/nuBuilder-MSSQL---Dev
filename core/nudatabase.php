@@ -61,7 +61,11 @@ function nuRunQuery($s, $a = array(), $isInsert = false){
 		return $a;
 	}
 
+	if (nuMSSQL()) {
+	$object = $nuDB->prepare($s, array(PDO::ATTR_CURSOR => PDO::CURSOR_SCROLL));
+} else {
 	$object = $nuDB->prepare($s);
+}
 
 	try {
 		$object->execute($a);
@@ -330,12 +334,32 @@ function nuID(){
 
 }
 
+
+function nuQuotize($string, $char)
+{
+	if (empty($string) || is_null($string)) {
+		return;
+	}
+
+
+	if ($string[0] != $char) {
+		$string = $char . $string;
+	}
+
+	if (substr($string, -1) != $char) {
+		$string .= $char; 
+	}
+
+	return $string;
+}
+
+
 // This function will return the quote character required when quoting database table names and field names that have spaces in them.
 // Return The Identifier quote character required.
 function nuIdentCol($s) {
 
 	global $DBDriver;
-	return $DBDriver != 'sqlsrv' ? '`'.$s.'`' : '['.$s.']';
+	return $DBDriver != 'sqlsrv' ? nuQuotize($s,'`') : '['.$s.']';
 
 }
 

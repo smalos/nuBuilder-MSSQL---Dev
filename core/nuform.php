@@ -130,8 +130,7 @@ function nuGetFormObject($F, $R, $OBJS, $tabs = null){
 		$A	= db_fetch_array($t);
 
 	}
-	
-	// xx (sob_all_type = 'run')
+
 	$s = "
  
 	SELECT * 
@@ -139,7 +138,7 @@ function nuGetFormObject($F, $R, $OBJS, $tabs = null){
 	INNER JOIN zzzzsys_object ON sob_all_zzzzsys_form_id = zzzzsys_form_id
 	INNER JOIN zzzzsys_tab ON zzzzsys_tab_id = sob_all_zzzzsys_tab_id
 	WHERE zzzzsys_form_id = ?
-	ORDER BY syt_order, sob_all_type , sob_all_zzzzsys_tab_id, sob_all_order
+	ORDER BY syt_order, CASE WHEN sob_all_type = 'run' THEN 0 ELSE 1 END, sob_all_zzzzsys_tab_id, sob_all_order
 
 	";
 
@@ -815,7 +814,7 @@ function nuBuildTabList($i){
 
 	$o = 0;
 	$a = array();
-	// xx
+	
 	$s = "
 
 		SELECT zzzzsys_tab_id, syt_zzzzsys_form_id, syt_title, syt_order, syt_help
@@ -927,14 +926,14 @@ function nuBrowseRows($f){
 		$rows		= 20;
 	}
 
-	$page_number	= isset($P['page_number']) ? $P['page_number'] : 0;
-	$nosearch_columns = isset($_POST['nuSTATE']['nosearch_columns']) ? $_POST['nuSTATE']['nosearch_columns'] : null;
-	$start			= $page_number * $rows;
-	$search			= str_replace('&#39;', "'", nuObjKey($P,'search'));
-	$filter			= str_replace('&#39;', "'", nuObjKey($P,'filter'));
-	$s				= "SELECT sfo_browse_sql FROM zzzzsys_form WHERE zzzzsys_form_id = '$f->id'";
-	$t				= nuRunQuery($s);
-	$r				= db_fetch_object($t);
+	$page_number		= isset($P['page_number']) ? $P['page_number'] : 0;
+	$nosearch_columns	= isset($_POST['nuSTATE']['nosearch_columns']) ? $_POST['nuSTATE']['nosearch_columns'] : null;
+	$start				= $page_number * $rows;
+	$search				= str_replace('&#39;', "'", nuObjKey($P,'search'));
+	$filter				= str_replace('&#39;', "'", nuObjKey($P,'filter'));
+	$s					= "SELECT sfo_browse_sql FROM zzzzsys_form WHERE zzzzsys_form_id = '$f->id'";
+	$t					= nuRunQuery($s);
+	$r					= db_fetch_object($t);
 	
 	if(trim($r->sfo_browse_sql) == ''){
 		return array(array(), 0);
@@ -985,13 +984,13 @@ function nuBrowseRows($f){
 
 	$t				= nuRunQuery($s);
 	$rowData		= db_num_rows($t);
-	
+
 	if (! nuMSSQL()) {
 		$s				.= " LIMIT " . ($start<0?0:$start) . ", $rows";
 	} else {
-		$s = preg_replace('/' . "SELECT" . '/', "SELECT TOP 10", $s, 1); // xx
+		$s .= "	OFFSET " . ($start<0?0:$start) . " ROWS FETCH NEXT " . $rows . " ROWS ONLY";
 	}
-	
+
 	$t				= nuRunQuery($s);
 
 	while($r = db_fetch_row($t)){
