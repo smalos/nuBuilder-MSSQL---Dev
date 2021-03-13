@@ -2,7 +2,7 @@
 
 function dropObject($name, $type) {
 
-		$sql = 'DROP '.$type.' IF EXISTS `'.$name.'`';
+		$sql = 'DROP '.$type.' IF EXISTS '.nuIdentCol($name);
 		nuRunQuery($sql);
 
 }
@@ -54,7 +54,7 @@ function nuImportSystemFiles() {
 						$temp	= str_replace('ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER','', $temp);
 
 						$objList1 = '`information_schema`.`tables`.`TABLE_NAME` AS `zzzzsys_object_list_id` from `information_schema`.`tables` where `information_schema`.`tables`.`TABLE_SCHEMA`';
-						$objList2 = '`TABLE_NAME` AS `zzzzsys_object_list_id` from `information_schema`.`tables` where `TABLE_SCHEMA`';
+						$objList2 = 'TABLE_NAME AS zzzzsys_object_list_id from information_schema.tables where TABLE_SCHEMA';
 						$temp	= str_replace($objList1, $objList2, $temp);
 
 						nuRunQuery($temp);
@@ -180,34 +180,34 @@ function nuAddNewSystemTables(){
 
 function nuAlterSystemTables(){
 	
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_object` CHANGE `sob_input_count` `sob_input_count` BIGINT(20) NULL DEFAULT '0';");
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_object` CHANGE `sob_all_order` `sob_all_order` INT(11) NULL DEFAULT '0';");	
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_object` ADD `sob_select_2` VARCHAR(1) NULL DEFAULT '0' AFTER `sob_select_multiple`;");
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_object` ADD `sob_input_datalist` TEXT NULL DEFAULT NULL AFTER `sob_input_javascript`;");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_object CHANGE sob_input_count sob_input_count BIGINT(20) NULL DEFAULT '0';");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_object CHANGE sob_all_order sob_all_order INT(11) NULL DEFAULT '0';");	
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_object ADD sob_select_2 VARCHAR(1) NULL DEFAULT '0' AFTER sob_select_multiple;");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_object ADD sob_input_datalist TEXT NULL DEFAULT NULL AFTER sob_input_javascript;");
 	
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_session` ADD `sss_hashcookies` MEDIUMTEXT NULL DEFAULT NULL AFTER `sss_access`;");
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_session` ADD COLUMN IF NOT EXISTS sss_login_time timestamp NULL DEFAULT current_timestamp(); AFTER sss_time");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_session ADD sss_hashcookies MEDIUMTEXT NULL DEFAULT NULL AFTER sss_access;");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_session ADD COLUMN IF NOT EXISTS sss_login_time timestamp NULL DEFAULT current_timestamp(); AFTER sss_time");
 
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_user` ADD `sus_code` varchar(50) DEFAULT NULL AFTER `sus_name`;");
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_user` ADD `sus_position` varchar(50) DEFAULT NULL AFTER `sus_code`;");
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_user` ADD `sus_department` varchar(50) DEFAULT NULL AFTER `sus_position`;");
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_user` ADD `sus_team` varchar(50) DEFAULT NULL AFTER `sus_department`;");
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_user` ADD `sus_additional1` varchar(100) DEFAULT NULL AFTER `sus_email`;");
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_user` ADD `sus_additional2` varchar(100) DEFAULT NULL AFTER `sus_additional1`;");
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_user` ADD `sus_expires_on` datetime DEFAULT NULL AFTER `sus_login_password`;");
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_user` ADD `sus_json` MEDIUMTEXT NULL DEFAULT NULL AFTER `sus_expires_on`;");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_user ADD sus_code varchar(50) DEFAULT NULL AFTER sus_name;");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_user ADD sus_position varchar(50) DEFAULT NULL AFTER sus_code;");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_user ADD sus_department varchar(50) DEFAULT NULL AFTER sus_position;");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_user ADD sus_team varchar(50) DEFAULT NULL AFTER sus_department;");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_user ADD sus_additional1 varchar(100) DEFAULT NULL AFTER sus_email;");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_user ADD sus_additional2 varchar(100) DEFAULT NULL AFTER sus_additional1;");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_user ADD sus_expires_on datetime DEFAULT NULL AFTER sus_login_password;");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_user ADD sus_json MEDIUMTEXT NULL DEFAULT NULL AFTER sus_expires_on;");
 
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_access_form` ADD `slf_data_mode` varchar(2) DEFAULT NULL AFTER `slf_print_button`;");
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_php` ADD `sph_global` VARCHAR(1) NOT NULL DEFAULT '0' AFTER `sph_system`;");
-	nuRunQueryNoDebug("ALTER TABLE `zzzzsys_setup` ADD `set_smtp_use_ssl` VARCHAR(1) NOT NULL DEFAULT '1' AFTER `set_smtp_use_authentication`;");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_access_form ADD slf_data_mode varchar(2) DEFAULT NULL AFTER slf_print_button;");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_php ADD sph_global VARCHAR(1) NOT NULL DEFAULT '0' AFTER sph_system;");
+	nuRunQueryNoDebug("ALTER TABLE zzzzsys_setup ADD set_smtp_use_ssl VARCHAR(1) NOT NULL DEFAULT '1' AFTER set_smtp_use_authentication;");
 
 	$setupColumns = db_field_names('zzzzsys_setup');
 	if(array_search('set_languages_included', $setupColumns) == false){
-		nuRunQueryNoDebug("ALTER TABLE `zzzzsys_setup` ADD `set_languages_included` VARCHAR(1000) NULL DEFAULT NULL AFTER `set_language`;");
-		nuRunQuery('UPDATE `zzzzsys_setup` SET set_languages_included = ?', array('["Arabic","Armenian","Chinese","Czech","French","German","Greek","Hindi","Italian","Malay","Russian","Spanish","Tamil","Vietnamese"]'));
+		nuRunQueryNoDebug("ALTER TABLE zzzzsys_setup ADD set_languages_included VARCHAR(1000) NULL DEFAULT NULL AFTER set_language;");
+		nuRunQuery('UPDATE zzzzsys_setup SET set_languages_included = ?', array('["Arabic","Armenian","Chinese","Czech","French","German","Greek","Hindi","Italian","Malay","Russian","Spanish","Tamil","Vietnamese"]'));
 	}
 	
-	nuRunQueryNoDebug("ALTER TABLE `pdf_temp` ADD `pdf_code` VARCHAR(100) NULL DEFAULT NULL AFTER `pdf_added_by`;");
+	nuRunQueryNoDebug("ALTER TABLE pdf_temp ADD pdf_code VARCHAR(100) NULL DEFAULT NULL AFTER pdf_added_by;");
 
 }	
 
@@ -388,7 +388,7 @@ function nuSetCollation(){
 
 function nuGetIncludedLanguages(){
 
-	$s		= "SELECT `set_languages_included` FROM `zzzzsys_setup`";
+	$s		= "SELECT set_languages_included FROM zzzzsys_setup";
 	$t		= nuRunQuery($s);
 	$r		= db_fetch_row($t);
 
@@ -401,7 +401,7 @@ function nuGetIncludedLanguages(){
 
 function nuImportLanguageFiles() {
 	
-	nuRunQuery("DELETE FROM `zzzzsys_translate` WHERE `zzzzsys_translate_id` LIKE 'nu%'");
+	nuRunQuery("DELETE FROM zzzzsys_translate WHERE zzzzsys_translate_id LIKE 'nu%'");
 	
 	$l = nuGetIncludedLanguages();
 	try{
@@ -426,71 +426,22 @@ function nuMigrateSQL() {
 	$set		= "nuStartDatabaseAdmin();";
 	$where		= 'nu5bad6cb37966261';
 	$values		= array($set,$where);
-	$sql		= "UPDATE `zzzzsys_event` SET `sev_javascript` = ? WHERE `zzzzsys_event_id` = ? ";
+	$sql		= "UPDATE zzzzsys_event SET sev_javascript = ? WHERE zzzzsys_event_id = ? ";
 	nuRunQuery($sql, $values);
 
 	$set		= "<iframe id='sqlframe' src='core/nuselect.php' style='height:180px;width:700px'></iframe>";
 	$where		= 'nu5bad6cb359e7a1a';
 	$values		= array($set,$where);
-	$sql		= "UPDATE `zzzzsys_object` SET `sob_html_code` = ? WHERE `zzzzsys_object_id` = ? ";
+	$sql		= "UPDATE zzzzsys_object SET sob_html_code = ? WHERE zzzzsys_object_id = ? ";
 	nuRunQuery($sql, $values);
 
 	$set		= 'window.open(\'core/nureportdesigner.php?tt=\' + $("#sre_zzzzsys_php_id").val() + \'&launch=\' + $("#sre_zzzzsys_form_id").val());';
 	$where		= 'nu5bad6cb3797b0a7';
 	$values		= array($set,$where);
-	$sql		= "UPDATE `zzzzsys_event` SET `sev_javascript` = ? WHERE `zzzzsys_event_id` = ?";
+	$sql		= "UPDATE zzzzsys_event SET sev_javascript = ? WHERE zzzzsys_event_id = ?";
 	nuRunQuery($sql, $values);
 
-	$set  = '$s  = "CREATE TABLE #TABLE_ID# SELECT zzzzsys_object_id AS theid FROM zzzzsys_object WHERE ";';
-	$set .= "\n";
-	$set .= '$w  = "1";';
-	$set .= "\n";
-	$set .= 'if ( $GLOBALS[\'nuSetup\']->set_denied == 1 )  { ';
-	$set .= "\n";
-	$set .= '$w  = "sob_all_zzzzsys_form_id NOT LIKE \'nu%\' OR sob_all_zzzzsys_form_id = \'nuuserhome\'"; ';
-	$set .= "\n";
-	$set .= '}';
-	$set .= "\n";
-	$set .= 'nuRunQuery("$s$w");';
-	$set .= "\n";
-	$where  = 'nuobject_BB';
-	$values = array($set,$where);
-	$sql    = "UPDATE `zzzzsys_php` SET `sph_php` = ? WHERE `zzzzsys_php_id` = ?";
-	nuRunQuery($sql, $values);
 
-	$set  = '$s  = "CREATE TABLE #TABLE_ID# SELECT zzzzsys_form_id AS theid FROM zzzzsys_form WHERE ";';
-	$set .= "\n";
-	$set .= '$w  = "1";';
-	$set .= "\n";
-	$set .= 'if ( $GLOBALS[\'nuSetup\']->set_denied == 1 )  { ';
-	$set .= "\n";
-	$set .= '$w  = "zzzzsys_form_id NOT LIKE \'nu%\' OR zzzzsys_form_id = \'nuuserhome\'"; ';
-	$set .= "\n";
-	$set .= '}';
-	$set .= "\n";
-	$set .= 'nuRunQuery("$s$w");';
-	$set .= "\n";
-	$where  = 'nuform_BB';
-	$values = array($set,$where);
-	$sql    = "UPDATE `zzzzsys_php` SET `sph_php` = ? WHERE `zzzzsys_php_id` = ?";
-	nuRunQuery($sql, $values);
-
-	$set  = '$s  = "CREATE TABLE #TABLE_ID# SELECT zzzzsys_form_id AS theid FROM zzzzsys_form WHERE ";';
-	$set .= "\n";
-	$set .= '$w  = "1";';
-	$set .= "\n";
-	$set .= 'if ( $GLOBALS[\'nuSetup\']->set_denied == 1 )  { ';
-	$set .= "\n";
-	$set .= '$w  = "zzzzsys_form_id NOT LIKE \'nu%\' OR zzzzsys_form_id = \'nuuserhome\'"; ';
-	$set .= "\n";
-	$set .= '}';
-	$set .= "\n";
-	$set .= 'nuRunQuery("$s$w");';
-	$set .= "\n";
-	$where  = 'nutablookup_BB';
-	$values = array($set,$where);
-	$sql    = "UPDATE `zzzzsys_php` SET `sph_php` = ? WHERE `zzzzsys_php_id` = ?";
-	nuRunQuery($sql, $values);
 }
 
 ?>
