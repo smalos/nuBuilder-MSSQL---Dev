@@ -734,8 +734,12 @@ function nuSelectOptions($sql) {
 		}
 
 	} elseif (substr(strtoupper(trim($sql)), 0, 6) == 'SELECT') {						//-- sql statement
-
-			$t		= nuRunQuery($sql);
+			
+			if (strpos($sql, "%THIS_DATABASE%")) {
+				$sql = str_replace("%THIS_DATABASE%",nuSchemaWhereCurrentDBSQL(),$sql);
+			}
+			
+			$t			= nuRunQuery($sql);
 
 			if (nuErrorFound()) {
 				return;
