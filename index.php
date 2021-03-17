@@ -3,10 +3,9 @@ $nb_path = __DIR__;
 
 require_once('core/nuchoosesetup.php');
 require_once('core/nuindexlibs.php');
-
 require_once('core/nustandalonesetuplibs.php'); 
 
-if (! nuMSSQL()) nuImportNewDB();
+nuImportNewDB($nuConfigDBDriver);
 
 require_once('core/nusystemupdatelibs.php');
 
